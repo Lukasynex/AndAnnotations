@@ -34,18 +34,30 @@ public class StartActivity extends Activity {
 
     @AfterViews
     void initViews() {
-        password.setInputType(InputType.TYPE_MASK_FLAGS);
+        // password.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
         context = this;
+
     }
 
     @Click({R.id.loginButton})
     void buttonClicked() {
-        if (login.getText().toString().equals("admin"))
-            if (password.getText().toString().equals("admin")) {
-                Intent intent = new Intent(this, MainActivity_.class);
-            } else {
-                Toast.makeText(this, "Invalid login or password", Toast.LENGTH_SHORT).show();
-//                Snackbar.make(context,"gg",Snackbar.LENGTH_SHORT).show();
+        boolean isValid = (boolean) isLoginValid()[0];
+        if (isValid) {
+            String user = (String)isLoginValid()[1];
+            Config.currentUser = user;
+            Intent intent = new Intent(this, MainActivity_.class);
+            startActivity(intent);
+        } else {
+            Toast.makeText(this, "Invalid login or password", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private Object[] isLoginValid() {
+        for (String user : Config.USERS) {
+            if (login.getText().toString().equals(user)) {
+                return new Object[]{true, user};
             }
+        }
+        return new Object[]{false, null};
     }
 }
