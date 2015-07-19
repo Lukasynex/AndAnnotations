@@ -17,6 +17,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import testo.pl.andannotations.Config;
+
 /**
  * Created by Lukasz Marczak on 2015-07-18.
  * Simple class which gets data from selected url
@@ -41,7 +43,6 @@ public class Get {
                 .build();
 
         client.newCall(request).enqueue(new Callback() {
-            String lukaszDeal = null, adasDeal = null;
 
             @Override
             public void onFailure(Request request, IOException e) {
@@ -66,12 +67,16 @@ public class Get {
                 JSONObject jObject = null;
                 try {
                     jObject = new JSONObject(result);
+                    Config.previousData = result;
                     JSONArray contacts = jObject.getJSONArray("results");
-                    String delaA = contacts.getJSONObject(0).getString("adas");
-                    String delaB = contacts.getJSONObject(1).getString("lukasz");
-                    
-                    lukaszDeal = delaB;
-                    adasDeal = delaA;
+
+                    Config.currentDeals.clear();
+                    int j = 0;
+                    for (String user : Config.USERS) {
+                        String currentDeal = contacts.getJSONObject(j).getString(user);
+                        Config.currentDeals.put(user, currentDeal);
+                        ++j;
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -79,8 +84,11 @@ public class Get {
                 context.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (lukaszDeal != null && adasDeal != null)
-                            textView.setText("Adas: " + adasDeal + "\nLukasz: " + lukaszDeal);
+                        String result = "";
+                        for (String user : Config.currentDeals.keySet()) {
+                            result = result + user + " : " + Config.currentDeals.get(user) + "\n";
+                        }
+                        textView.setText(result);
                     }
                 });
             }

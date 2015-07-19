@@ -6,16 +6,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.DataSetObserver;
 import android.graphics.Color;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -53,10 +47,13 @@ public class MainActivity extends Activity {
     void afterViews() {
         context = this;
 
-        List<String> otherUsers = new ArrayList<>(Config.USERS.length - 1);
+        List<String> otherUsers = new ArrayList<>();
 
-        for (String user : otherUsers) {
-            if (!user.equals(Config.currentUser)) {
+        for (String user : Config.USERS) {
+            if (user.equals(Config.currentUser)) {
+                Log.d(TAG, "current User is " + user);
+            } else {
+                Log.d(TAG, "adding next user: " + user);
                 otherUsers.add(user);
             }
         }
@@ -71,16 +68,37 @@ public class MainActivity extends Activity {
         Get getter = new Get();
 
         try {
-            getter.betterPull("http://jaszczomp.cal24.pl/data/deals.txt", deals_info, context);
+            String urlName = "http://jaszczomp.cal24.pl/posts/" + Config.currentUser + ".txt";
+            Log.i(TAG, urlName);
+            getter.betterPull(urlName, deals_info, context);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     @Click({R.id.post})
     void postData() {
+
         String value = postValue.getText().toString();
+        if (postValue.length() == 0) {
+            context.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(context, "Puste pole!", Toast.LENGTH_SHORT).show();
+                    postValue.setBackgroundColor(Color.RED);
+                    try {
+                        Log.e(TAG, "perform sleeping for 0.5 seconds ");
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "sleeping failed");
+                        e.printStackTrace();
+                    }
+                    postValue.setBackgroundColor(Color.LTGRAY);
+                    return;
+                }
+            });
+        }
+        Log.v(TAG,"start normal");
         String name = (String) spinner.getSelectedItem();
         name = name.toLowerCase();
         String dolans = getResources().getString(R.string.dolans);
@@ -88,10 +106,11 @@ public class MainActivity extends Activity {
         String json = name + demand + value + dolans;
         Post poster = new Post();
         try {
-//            String url = "http://jaszczomp.cal24.pl/posts/" + name + ".txt";
-            String url = "http://jaszczomp.cal24.pl/posts/test.php";
+            String url = "http://jaszczomp.cal24.pl/posts/" + Config.currentUser + "_post.php";
             Log.i(TAG, "selected url: " + url);
-            poster.postString(url, "{ \"results\" : [ { \"adas\" : \"2.5\"}, {\"lukasz\" : \"0.50\"} ] }");
+
+            String data = JsonBuilder.update(Config.previousData, name, value);
+            poster.postString(url, data);
         } catch (Exception e) {
             e.printStackTrace();
         }
